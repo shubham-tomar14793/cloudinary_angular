@@ -73,17 +73,24 @@ describe('CloudinaryVideo', () => {
 
   describe('videos with nested transformations', () => {
     @Component({
-      template: `<cl-video id="video1" public-id="sample_video">
-            <cl-transformation width="300" crop="scale" overlay="text:roboto_35_bold:SDK"></cl-transformation>
-            <cl-transformation effect="art:hokusai"></cl-transformation>
-            <cl-transformation fetch_format="auto"></cl-transformation>
-            </cl-video>`
+      template: `
+        <cl-video id="video1" public-id="sample_video">
+          <cl-transformation width="300" crop="scale" keyframe_interval="12" overlay="text:roboto_35_bold:SDK"></cl-transformation>
+          <cl-transformation effect="art:hokusai"></cl-transformation>
+          <cl-transformation fetch_format="auto"></cl-transformation>
+        </cl-video>
+        <cl-video id="video2" public-id="sample_video">
+          <cl-transformation width="300" crop="scale" keyframe-interval="12" overlay="text:roboto_35_bold:SDK"></cl-transformation>
+          <cl-transformation effect="art:hokusai"></cl-transformation>
+          <cl-transformation fetch_format="auto"></cl-transformation>
+        </cl-video>
+      `
     })
     class TestComponent {
     }
 
     let fixture: ComponentFixture<TestComponent>;
-    let des: DebugElement;  // the elements w/ the directive
+    let des: DebugElement[];  // the elements w/ the directive
 
     beforeEach(() => {
       fixture = TestBed.configureTestingModule({
@@ -94,25 +101,27 @@ describe('CloudinaryVideo', () => {
       fixture.detectChanges(); // initial binding
 
       // all elements with an attached CloudinaryVideo
-      des = fixture.debugElement.query(By.directive(CloudinaryVideo));
+      des = fixture.debugElement.queryAll(By.directive(CloudinaryVideo));
     });
 
     it('creates a <video> element which encodes the directive attributes to the URL', () => {
-      const video = des.children[0].nativeElement as HTMLVideoElement;
-      // Created <video> element should have 3 child <source> elements for mp4, webm, ogg
-      expect(video.childElementCount).toBe(3);
+      des.forEach(element => {
+        const video = element.children[0].nativeElement as HTMLVideoElement;
+        // Created <video> element should have 3 child <source> elements for mp4, webm, ogg
+        expect(video.childElementCount).toBe(3);
 
-      for (let i = 0; i < 3; i++) {
-        expect(video.children[i].attributes.getNamedItem('src')).toBeDefined();
-        expect(video.children[i].attributes.getNamedItem('src').value).toEqual(
-          jasmine.stringMatching
-            (/c_scale,l_text:roboto_35_bold:SDK,w_300\/e_art:hokusai\/f_auto\/sample_video/));
-        expect(video.children[i].attributes.getNamedItem('src').value).toEqual(
-          jasmine.stringMatching(/video\/upload/));
-      }
+        for (let i = 0; i < 3; i++) {
+          expect(video.children[i].attributes.getNamedItem('src')).toBeDefined();
+          expect(video.children[i].attributes.getNamedItem('src').value).toEqual(
+            jasmine.stringMatching
+            (/c_scale,ki_12,l_text:roboto_35_bold:SDK,w_300\/e_art:hokusai\/f_auto\/sample_video/));
+          expect(video.children[i].attributes.getNamedItem('src').value).toEqual(
+            jasmine.stringMatching(/video\/upload/));
+        }
+      });
 
       // verify interaction with underlying cloudinary-core lib
-      expect(localCloudinary.videoTag).toHaveBeenCalledTimes(1);
+      expect(localCloudinary.videoTag).toHaveBeenCalledTimes(2);
     });
   });
 
